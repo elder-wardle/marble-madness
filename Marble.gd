@@ -1,21 +1,21 @@
 extends RigidBody
 
-var maxSpeed := 10.0;
+export(float) var maxSpeed := 10.0;
 
-@export_range(0.0, 100.0) var maxAcceleration := 10.0
-@export_range(0.0, 100.0) var maxAirAcceleration := 1.0
+export(float, 100.0) var maxAcceleration := 10.0
+export(float, 100.0) var maxAirAcceleration := 1.0
 
-@export_range(0.0, 10.0, "or_greater") var jumpHeight: float = 2.0
-@export_range(5, "or_greater") var maxAirJumps: int = 0
+export(float, 10.0) var jumpHeight := 2.0
+export(int, 5) var maxAirJumps := 0
 
-@export_range(0.0, 90.0) var maxGroundAngle := 25.0
+export(float, 90.0) var maxGroundAngle := 25.0
 
-@onready var body;
+onready var body;
 
 var velocity: Vector3
 var desiredVelocity: Vector3
 
-var contactNormal: Vector 3
+var contactNormal: Vector3
 
 var desiredJump: bool
 
