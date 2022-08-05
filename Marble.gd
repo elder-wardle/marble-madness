@@ -21,117 +21,113 @@ var desiredJump: bool
 
 var groundContactCount: int
 
-varOnGround: bool
-  get:
-      groundContactCount > 0;
+var OnGround: bool setget ,_on_ground_get
 
-	  var jumpPhase: int
+var jumpPhase: int
 
-	  @onready var minGroundDotProduct := cos(deg2rad(maxGroundAngle))
+onready var minGroundDotProduct := cos(deg2rad(maxGroundAngle))
 
-	  	void Update () {
-				Vector2 playerInput;
-						playerInput.x = Input.GetAxis("Horizontal");
-								playerInput.y = Input.GetAxis("Vertical");
-										playerInput = Vector2.ClampMagnitude(playerInput, 1f);
+void _process():
+	Vector2 playerInput;
+	playerInput.x = Input.GetAxis("Horizontal");
+	playerInput.y = Input.GetAxis("Vertical");
+	playerInput = Vector2.ClampMagnitude(playerInput, 1f);
 
-												desiredVelocity =
-															new Vector3(playerInput.x, 0f, playerInput.y) * maxSpeed;
+	desiredVelocity = new Vector3(playerInput.x, 0f, playerInput.y) * maxSpeed;
 
-																	desiredJump |= Input.GetButtonDown("Jump");
-																		}
+	desiredJump |= Input.GetButtonDown("Jump");
 
-																		func _process() {
-																				UpdateState();
-																						AdjustVelocity();
+func _process():
+	UpdateState();
+	AdjustVelocity();
 
-																								if (desiredJump) {
-																											desiredJump = false;
-																														Jump();
-																																}
+	if (desiredJump) {
+		desiredJump = false;
+		Jump();
+	}
 
-																																		body.velocity = velocity;
-																																				ClearState();
-																																					}
+	body.velocity = velocity;
+	ClearState();
 
-																																						void ClearState () {
-																																								groundContactCount = 0;
-																																										contactNormal = Vector3.zero;
-																																											}
 
-																																												void UpdateState () {
-																																														velocity = body.velocity;
-																																																if (OnGround) {
-																																																			jumpPhase = 0;
-																																																						if (groundContactCount > 1) {
-																																																										contactNormal.Normalize();
-																																																													}
-																																																															}
-																																																																	else {
-																																																																				contactNormal = Vector3.up;
-																																																																						}
-																																																																							}
+void ClearState () {
+	groundContactCount = 0;
+	contactNormal = Vector3.zero;
+}
 
-																																																																								void AdjustVelocity () {
-																																																																										Vector3 xAxis = ProjectOnContactPlane(Vector3.right).normalized;
-																																																																												Vector3 zAxis = ProjectOnContactPlane(Vector3.forward).normalized;
+void UpdateState () {
+	velocity = body.velocity;
+	if (OnGround) {
+		jumpPhase = 0;
+		if (groundContactCount > 1) {
+			contactNormal.Normalize();
+		}
+	}
+	else {
+		contactNormal = Vector3.up;
+	}
+}
 
-																																																																														float currentX = Vector3.Dot(velocity, xAxis);
-																																																																																float currentZ = Vector3.Dot(velocity, zAxis);
+void AdjustVelocity () {
+	Vector3 xAxis = ProjectOnContactPlane(Vector3.right).normalized;
+	Vector3 zAxis = ProjectOnContactPlane(Vector3.forward).normalized;
 
-																																																																																		float acceleration = OnGround ? maxAcceleration : maxAirAcceleration;
-																																																																																				float maxSpeedChange = acceleration * Time.deltaTime;
+	float currentX = Vector3.Dot(velocity, xAxis);
+	float currentZ = Vector3.Dot(velocity, zAxis);
 
-																																																																																						float newX =
-																																																																																									Mathf.MoveTowards(currentX, desiredVelocity.x, maxSpeedChange);
-																																																																																											float newZ =
-																																																																																														Mathf.MoveTowards(currentZ, desiredVelocity.z, maxSpeedChange);
+	float acceleration = OnGround ? maxAcceleration : maxAirAcceleration;
+	float maxSpeedChange = acceleration * Time.deltaTime;
 
-																																																																																																velocity += xAxis * (newX - currentX) + zAxis * (newZ - currentZ);
-																																																																																																	}
+	float newX = Mathf.MoveTowards(currentX, desiredVelocity.x, maxSpeedChange);
+	float newZ = Mathf.MoveTowards(currentZ, desiredVelocity.z, maxSpeedChange);
 
-																																																																																																		void Jump () {
-																																																																																																				if (OnGround || jumpPhase < maxAirJumps) {
-																																																																																																							jumpPhase += 1;
-																																																																																																										float jumpSpeed = Mathf.Sqrt(-2f * Physics.gravity.y * jumpHeight);
-																																																																																																													float alignedSpeed = Vector3.Dot(velocity, contactNormal);
-																																																																																																																if (alignedSpeed > 0f) {
-																																																																																																																				jumpSpeed = Mathf.Max(jumpSpeed - alignedSpeed, 0f);
-																																																																																																																							}
-																																																																																																																										velocity += contactNormal * jumpSpeed;
-																																																																																																																												}
-																																																																																																																													}
+	velocity += xAxis * (newX - currentX) + zAxis * (newZ - currentZ);
+}
 
-																																																																																																																														void OnCollisionEnter (Collision collision) {
-																																																																																																																																EvaluateCollision(collision);
-																																																																																																																																	}
+void Jump () {
+	if (OnGround || jumpPhase < maxAirJumps) {
+		jumpPhase += 1;
+		float jumpSpeed = Mathf.Sqrt(-2f * Physics.gravity.y * jumpHeight);
+		float alignedSpeed = Vector3.Dot(velocity, contactNormal);
+		if (alignedSpeed > 0f) {
+			jumpSpeed = Mathf.Max(jumpSpeed - alignedSpeed, 0f);
+		}
+		velocity += contactNormal * jumpSpeed;
+	}
+}
 
-																																																																																																																																		void OnCollisionStay (Collision collision) {
-																																																																																																																																				EvaluateCollision(collision);
-																																																																																																																																					}
+void OnCollisionEnter (Collision collision) {
+	EvaluateCollision(collision);
+}
 
-																																																																																																																																					func EvaluateCollision (Collision collision) -> void:
-																																																																																																																																						for (int i = 0; i < collision.contactCount; i++):
-																																																																																																																																								var normal := collision.GetContact(i).normal
-																																																																																																																																										if (normal.y >= minGroundDotProduct):
-																																																																																																																																													groundContactCount += 1;
-																																																																																																																																																contactNormal += normal;
+void OnCollisionStay (Collision collision) {
+	EvaluateCollision(collision);
+}
 
-																																																																																																																																																	Vector3 ProjectOnContactPlane (Vector3 vector) {
-																																																																																																																																																			return vector - contactNormal * Vector3.Dot(vector, contactNormal);
-																																																																																																																																																				}
-																																																																																																																																																				}
+func EvaluateCollision (Collision collision) -> void:
+	for (int i = 0; i < collision.contactCount; i++):
+		var normal := collision.GetContact(i).normal
+		if (normal.y >= minGroundDotProduct):
+			groundContactCount += 1;
+			contactNormal += normal;
 
-																																																																																																																																																				signals
-																																																																																																																																																				06. enums
-																																																																																																																																																				07. constants
-																																																																																																																																																				08. exported variables
-																																																																																																																																																				09. public variables
-																																																																																																																																																				10. private variables
-																																																																																																																																																				11. onready variables
+	Vector3 ProjectOnContactPlane (Vector3 vector) {
+		return vector - contactNormal * Vector3.Dot(vector, contactNormal);
+	}
 
-																																																																																																																																																				12. optional built-in virtual _init method
-																																																																																																																																																				13. built-in virtual _ready method
-																																																																																																																																																				14. remaining built-in virtual methods
-																																																																																																																																																				15. public methods
-																																																																																																																																																				16. private methods
+#05. signals
+#06. enums
+#07. constants
+#08. exported variables
+#09. public variables
+#10. private variables
+#11. onready variables
+
+#12. optional built-in virtual _init method
+#13. built-in virtual _ready method
+#14. remaining built-in virtual methods
+#15. public methods
+#16. private methods
+
+func _on_ground_get():
+	return groundContactCount > 0
