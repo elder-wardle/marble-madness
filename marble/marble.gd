@@ -30,7 +30,7 @@ func _process():
 	var player_input := Vector2.ZERO
 	player_input.x = Input.GetAxis("Horizontal")
 	player_input.y = Input.GetAxis("Vertical")
-	player_input = Vector2.ClampMagnitude(playerInput, 1.0)
+	player_input = Vector2.clamped(playerInput, 1.0)
 
 	var desired_velocity := Vector3(player_input.x, 0.0, player_input.y) * maxSpeed;
 
@@ -57,7 +57,7 @@ func update_state() -> void:
 	velocity = body.velocity;
 	if on_ground:
 		jump_phase = 0;
-		if (ground_contact_count > 1) {
+		if (ground_contact_count > 1):
 			contact_normal.normalize()
 	else:
 		contact_normal = Vector3.UP
